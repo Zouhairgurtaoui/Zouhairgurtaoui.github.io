@@ -32,7 +32,7 @@ Here is the computer identity for the Workstation that will be our road to the D
 
 ![AD Employees OU structure](/writeups/rbcd/ad-employees.png)
 
-This picture demonstrate the Organizational Unit (Employees) and the security group IT that the user is also a member of.
+This picture demonstrate the Organizational Unit (Employees) and the security group (IT) that the user is also a member of.
 
 ---
 
@@ -49,7 +49,7 @@ nmap -sS 192.168.1.0/24
 
 ![nmap SYN scan — DC and WS01 identified on the network](/writeups/rbcd/ad-recon-identify-hosts.png)
 
-The scan reveals two live hosts. **192.168.1.10** exposes ports 88, 389, 445, 3268 — a classic AD Domain Controller fingerprint. **192.168.1.20** is WS01.
+The scan reveals two live hosts. **192.168.1.10** exposes ports 88, 389, 445, 3268 a classic AD Domain Controller fingerprint. **192.168.1.20** is WS01.
 
 ### User Enumeration via Kerberos
 
@@ -63,7 +63,7 @@ nmap -p 88 --script=krb5-enum-users --script-args krb5-enum-users.realm=corp.loc
 ![krb5-enum-users — valid Kerberos principals discovered](/writeups/rbcd/ad-recon-users.png)
 
 > [!NOTE]
-> **HOW IT WORKS** — Kerbrute sends AS-REQ packets to the DC. A valid user triggers `KDC_ERR_PREAUTH_REQUIRED`, while an invalid one returns `KDC_ERR_C_PRINCIPAL_UNKNOWN`. No lockout risk, no credentials needed.
+> Kerbrute sends AS-REQ packets to the DC. A valid user triggers `KDC_ERR_PREAUTH_REQUIRED`, while an invalid one returns `KDC_ERR_C_PRINCIPAL_UNKNOWN`. No lockout risk, no credentials needed.
 
 ---
 
