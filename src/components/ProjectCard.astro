@@ -1,0 +1,39 @@
+---
+import type { Project } from '../data/projects';
+
+interface Props {
+  project: Project;
+  index: number;
+}
+
+const { project: p, index: i } = Astro.props;
+---
+
+<div class={`bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl p-8 flex flex-col transition-all duration-300 relative overflow-hidden group hover:border-[var(--color-border-hover)] hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.15)] reveal reveal-delay-${(i % 4) + 1} ${p.featured ? 'border-[rgba(0,229,255,0.15)]' : ''}`}>
+  <!-- Top accent line -->
+  <div class={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[var(--color-accent)] to-transparent transition-opacity duration-300 ${p.featured ? 'opacity-50' : 'opacity-0'} group-hover:opacity-100`}></div>
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-5">
+    <div class="w-11 h-11 rounded-lg bg-[var(--color-accent-soft)] flex items-center justify-center text-xl text-[var(--color-accent)]">📂</div>
+    <div class="flex gap-3">
+      {p.github && (
+        <a href={p.github} target="_blank" rel="noopener" class="text-xl text-[var(--color-text-muted)] transition-colors duration-300 hover:text-[var(--color-accent)] no-underline" aria-label={`GitHub repo for ${p.title}`}>⟨/⟩</a>
+      )}
+      {p.demo && (
+        <a href={p.demo} target="_blank" rel="noopener" class="text-xl text-[var(--color-text-muted)] transition-colors duration-300 hover:text-[var(--color-accent)] no-underline" aria-label={`Live demo for ${p.title}`}>↗</a>
+      )}
+    </div>
+  </div>
+
+  <!-- Content -->
+  <h3 class="text-lg font-bold text-[var(--color-text-primary)] mb-3 leading-tight">{p.title}</h3>
+  <p class="text-[0.92rem] text-[var(--color-text-secondary)] leading-relaxed mb-6 flex-grow">{p.description}</p>
+
+  <!-- Tech badges -->
+  <div class="flex flex-wrap gap-2">
+    {p.tech.map((t) => (
+      <span class="font-[var(--font-mono)] text-xs text-[var(--color-text-muted)] px-2.5 py-1 bg-[var(--color-bg-secondary)] rounded border border-[var(--color-border)]">{t}</span>
+    ))}
+  </div>
+</div>

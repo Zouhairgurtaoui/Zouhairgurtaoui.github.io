@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════
+   THEME TOKENS — Tailwind v4 CSS-first config
+   Change these to reskin the entire site.
+   ═══════════════════════════════════════════════════════ */
+
+@theme {
+  /* Accent */
+  --color-accent: #00e5ff;
+  --color-accent-hover: #00b8d4;
+  --color-accent-soft: rgba(0, 229, 255, 0.10);
+
+  /* Surfaces */
+  --color-bg-primary: #0a0e17;
+  --color-bg-secondary: #111827;
+  --color-bg-card: #151c2c;
+  --color-bg-card-hover: #1a2332;
+  --color-bg-glass: rgba(21, 28, 44, 0.70);
+
+  /* Text */
+  --color-text-primary: #f0f4f8;
+  --color-text-secondary: #8892a4;
+  --color-text-muted: #5a6478;
+
+  /* Borders */
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border-hover: rgba(0, 229, 255, 0.25);
+
+  /* Semantic */
+  --color-red: #ff4560;
+  --color-yellow: #ffd166;
+  --color-green: #00ff88;
+  --color-blue: #00bfff;
+  --color-code-bg: #080d14;
+
+  /* Typography */
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Sizing */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --spacing-nav: 72px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LIGHT THEME OVERRIDES
+   ═══════════════════════════════════════════════════════ */
+
+[data-theme="light"] {
+  --color-accent: #0077b6;
+  --color-accent-hover: #005a8c;
+  --color-accent-soft: rgba(0, 119, 182, 0.08);
+
+  --color-bg-primary: #f8fafc;
+  --color-bg-secondary: #ffffff;
+  --color-bg-card: #ffffff;
+  --color-bg-card-hover: #f1f5f9;
+  --color-bg-glass: rgba(255, 255, 255, 0.80);
+
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+
+  --color-border: rgba(0, 0, 0, 0.06);
+  --color-border-hover: rgba(0, 119, 182, 0.25);
+
+  --color-red: #dc2626;
+  --color-yellow: #ca8a04;
+  --color-green: #16a34a;
+  --color-blue: #2563eb;
+  --color-code-bg: #f1f5f9;
+}
+
+/* ═══════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════ */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--spacing-nav);
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::selection {
+  background: rgba(0, 229, 255, 0.25);
+  color: var(--color-text-primary);
+}
+
+[data-theme="light"] ::selection {
+  background: rgba(0, 119, 182, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* ═══════════════════════════════════════════════════════
+   WRITEUP-SPECIFIC STYLES
+   ═══════════════════════════════════════════════════════ */
+
+/* Phase fade-in */
+.phase {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp 0.6s forwards;
+}
+.phase:nth-child(1)  { animation-delay: 0.05s; }
+.phase:nth-child(2)  { animation-delay: 0.10s; }
+.phase:nth-child(3)  { animation-delay: 0.15s; }
+.phase:nth-child(4)  { animation-delay: 0.20s; }
+.phase:nth-child(5)  { animation-delay: 0.25s; }
+.phase:nth-child(6)  { animation-delay: 0.30s; }
+.phase:nth-child(7)  { animation-delay: 0.35s; }
+.phase:nth-child(8)  { animation-delay: 0.40s; }
+.phase:nth-child(9)  { animation-delay: 0.45s; }
+.phase:nth-child(10) { animation-delay: 0.50s; }
+
+/* Syntax highlight classes */
+.kw  { color: #c084fc; }
+.str { color: #fbbf24; }
+.cmd { color: var(--color-accent); }
+.arg { color: #60a5fa; }
+.cmt { color: var(--color-text-muted); font-style: italic; }
+.ok  { color: var(--color-green); font-weight: 600; }
+.err { color: var(--color-red); }
+
+[data-theme="light"] .kw  { color: #7c3aed; }
+[data-theme="light"] .str { color: #b45309; }
+[data-theme="light"] .arg { color: #2563eb; }

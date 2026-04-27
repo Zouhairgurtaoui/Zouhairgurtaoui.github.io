@@ -1,0 +1,64 @@
+---
+---
+
+<section class="min-h-screen flex items-center pt-[72px] relative overflow-hidden" id="hero">
+  <!-- Background glow -->
+  <div class="absolute top-[20%] right-[-100px] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(0,229,255,0.08)_0%,transparent_70%)] pointer-events-none z-0"></div>
+
+  <!-- Grid effect -->
+  <div class="absolute top-0 right-0 bottom-0 w-1/2 pointer-events-none opacity-100 max-md:opacity-30 max-sm:hidden"
+    style="background-image: radial-gradient(circle at 1px 1px, rgba(0,229,255,0.08) 1px, transparent 0);
+           background-size: 40px 40px;
+           mask-image: radial-gradient(ellipse 80% 70% at 70% 50%, black 30%, transparent 70%);
+           -webkit-mask-image: radial-gradient(ellipse 80% 70% at 70% 50%, black 30%, transparent 70%);"
+    aria-hidden="true"></div>
+
+  <div class="w-full max-w-[1200px] mx-auto px-6">
+    <div class="relative z-10 max-w-[700px]">
+      <!-- Greeting -->
+      <p class="font-[var(--font-mono)] text-[0.95rem] text-[var(--color-accent)] mb-4 flex items-center gap-2 reveal">
+        Hello, I'm <span class="inline-block w-0.5 h-[18px] bg-[var(--color-accent)]" style="animation: blink 1s step-end infinite;"></span>
+      </p>
+
+      <!-- Name -->
+      <h1 class="text-[clamp(2.5rem,6vw,4rem)] font-extrabold leading-[1.1] mb-2 bg-gradient-to-br from-[var(--color-text-primary)] to-[var(--color-text-secondary)] bg-clip-text text-transparent reveal reveal-delay-1">
+        Zouhair Guertaoui
+      </h1>
+
+      <!-- Title -->
+      <p class="text-[clamp(1.1rem,2.5vw,1.5rem)] font-normal text-[var(--color-text-secondary)] mb-5 reveal reveal-delay-2">
+        <span class="text-[var(--color-accent)] font-semibold">Cybersecurity Engineer</span> & Developer
+      </p>
+
+      <!-- Bio -->
+      <p class="text-[1.05rem] text-[var(--color-text-secondary)] leading-relaxed mb-9 max-w-[560px] reveal reveal-delay-3">
+        IT Security & Digital Trust engineering student at ENSIASD. I design secure
+        network architectures, build resilient applications, and explore offensive
+        security — always chasing the next vulnerability.
+      </p>
+
+      <!-- CTA Buttons -->
+      <div class="flex gap-4 flex-wrap max-sm:flex-col reveal reveal-delay-4">
+        <a href="#projects"
+           class="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg font-semibold text-sm bg-[var(--color-accent)] text-[var(--color-bg-primary)] shadow-[0_4px_15px_rgba(0,229,255,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_6px_25px_rgba(0,229,255,0.4)] no-underline max-sm:w-full max-sm:justify-center">
+          <span class="text-lg">⚡</span> View Projects
+        </a>
+        <a href="#contact"
+           class="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg font-semibold text-sm bg-transparent text-[var(--color-text-primary)] border border-[var(--color-border)] transition-all duration-300 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-soft)] hover:-translate-y-0.5 no-underline max-sm:w-full max-sm:justify-center">
+          <span class="text-lg">✉️</span> Contact Me
+        </a>
+      </div>
+
+      <!-- Status -->
+      <div class="flex items-center gap-5 mt-8 pt-6 border-t border-[var(--color-border)] flex-wrap max-sm:flex-col max-sm:items-start max-sm:gap-3 reveal reveal-delay-4">
+        <div class="flex items-center gap-2 text-[0.85rem] text-[var(--color-text-muted)]">
+          <span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" style="animation: pulse-dot 2s ease-in-out infinite;"></span>
+          Available for internships & collaborations
+        </div>
+        <div class="flex items-center gap-2 text-[0.85rem] text-[var(--color-text-muted)]">
+          📍 Morocco
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

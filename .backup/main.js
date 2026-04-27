@@ -61,7 +61,7 @@ function renderWriteups() {
   grid.innerHTML = writeups
     .map(
       (w, i) => `
-    <a href="${w.link}" target="_blank" rel="noopener" class="writeup-card reveal reveal-delay-${(i % 4) + 1}">
+    <a href="${w.link}" ${w.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="writeup-card reveal reveal-delay-${(i % 4) + 1}">
       <div class="writeup-meta">
         <span class="writeup-category">${w.category}</span>
         <span class="writeup-date">${formatDate(w.date)}</span>

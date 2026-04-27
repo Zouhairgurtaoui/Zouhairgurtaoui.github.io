@@ -1,0 +1,73 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/Hero.astro';
+import About from '../components/About.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import WriteupCard from '../components/WriteupCard.astro';
+import SkillGroup from '../components/SkillGroup.astro';
+import Contact from '../components/Contact.astro';
+
+import { projects } from '../data/projects';
+import { writeups } from '../data/writeups';
+import { skillGroups } from '../data/skills';
+---
+
+<Base title="Zouhair Guertaoui — Cybersecurity Engineer & Developer">
+
+  <Hero />
+  <About />
+
+  <!-- ═══ PROJECTS ═══ -->
+  <section class="py-24 relative" id="projects">
+    <div class="w-full max-w-[1200px] mx-auto px-6">
+      <span class="inline-flex items-center gap-2 font-[var(--font-mono)] text-[0.8rem] font-medium text-[var(--color-accent)] uppercase tracking-[3px] mb-3 reveal before:content-[''] before:w-6 before:h-0.5 before:bg-[var(--color-accent)] before:rounded-sm">Portfolio</span>
+      <h2 class="text-[clamp(1.8rem,4vw,2.6rem)] font-bold text-[var(--color-text-primary)] mb-4 leading-tight reveal">Featured Projects</h2>
+      <p class="text-[1.05rem] text-[var(--color-text-secondary)] max-w-[560px] leading-relaxed reveal">
+        A selection of security architecture, application development, and research projects.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-6 mt-12">
+        {projects.map((p, i) => (
+          <ProjectCard project={p} index={i} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ WRITEUPS ═══ -->
+  <section class="py-24 relative" id="writeups">
+    <div class="w-full max-w-[1200px] mx-auto px-6">
+      <span class="inline-flex items-center gap-2 font-[var(--font-mono)] text-[0.8rem] font-medium text-[var(--color-accent)] uppercase tracking-[3px] mb-3 reveal before:content-[''] before:w-6 before:h-0.5 before:bg-[var(--color-accent)] before:rounded-sm">Articles</span>
+      <h2 class="text-[clamp(1.8rem,4vw,2.6rem)] font-bold text-[var(--color-text-primary)] mb-4 leading-tight reveal">Writeups & Research</h2>
+      <p class="text-[1.05rem] text-[var(--color-text-secondary)] max-w-[560px] leading-relaxed reveal">
+        Technical writeups, vulnerability research, and security insights.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-6 mt-12">
+        {writeups.map((w, i) => (
+          <WriteupCard writeup={w} index={i} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SKILLS ═══ -->
+  <section class="py-24 relative" id="skills">
+    <div class="w-full max-w-[1200px] mx-auto px-6">
+      <span class="inline-flex items-center gap-2 font-[var(--font-mono)] text-[0.8rem] font-medium text-[var(--color-accent)] uppercase tracking-[3px] mb-3 reveal before:content-[''] before:w-6 before:h-0.5 before:bg-[var(--color-accent)] before:rounded-sm">Expertise</span>
+      <h2 class="text-[clamp(1.8rem,4vw,2.6rem)] font-bold text-[var(--color-text-primary)] mb-4 leading-tight reveal">Skills & Technologies</h2>
+      <p class="text-[1.05rem] text-[var(--color-text-secondary)] max-w-[560px] leading-relaxed reveal">
+        Grouped by domain — from offensive security to full-stack development.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6 mt-12">
+        {skillGroups.map((g, i) => (
+          <SkillGroup group={g} index={i} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <Contact />
+
+</Base>

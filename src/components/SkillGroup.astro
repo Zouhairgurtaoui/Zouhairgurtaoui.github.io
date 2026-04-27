@@ -1,0 +1,29 @@
+---
+import type { SkillGroup } from '../data/skills';
+
+interface Props {
+  group: SkillGroup;
+  index: number;
+}
+
+const { group: g, index: i } = Astro.props;
+---
+
+<div class={`bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl p-8 transition-all duration-300 hover:border-[var(--color-border-hover)] hover:-translate-y-1 reveal reveal-delay-${(i % 4) + 1}`}>
+  <!-- Icon -->
+  <div class="w-12 h-12 rounded-lg bg-[var(--color-accent-soft)] flex items-center justify-center text-2xl mb-5">
+    {g.icon}
+  </div>
+
+  <!-- Title -->
+  <h3 class="text-[1.05rem] font-bold text-[var(--color-text-primary)] mb-4">{g.title}</h3>
+
+  <!-- Skills -->
+  <div class="flex flex-wrap gap-2">
+    {g.skills.map((skill) => (
+      <span class="px-3.5 py-1.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-md text-[0.82rem] text-[var(--color-text-secondary)] font-medium transition-all duration-300 hover:text-[var(--color-accent)] hover:border-[var(--color-border-hover)] hover:bg-[var(--color-accent-soft)] cursor-default">
+        {skill}
+      </span>
+    ))}
+  </div>
+</div>

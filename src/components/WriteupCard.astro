@@ -1,0 +1,43 @@
+---
+import type { Writeup } from '../data/writeups';
+
+interface Props {
+  writeup: Writeup;
+  index: number;
+}
+
+const { writeup: w, index: i } = Astro.props;
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+const isExternal = w.link.startsWith('http');
+---
+
+<a
+  href={w.link}
+  target={isExternal ? "_blank" : undefined}
+  rel={isExternal ? "noopener" : undefined}
+  class={`bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl p-8 flex flex-col transition-all duration-300 cursor-pointer no-underline group hover:border-[var(--color-border-hover)] hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.15)] reveal reveal-delay-${(i % 4) + 1}`}
+>
+  <!-- Meta -->
+  <div class="flex items-center justify-between mb-4">
+    <span class="font-[var(--font-mono)] text-xs font-semibold uppercase tracking-wider text-[var(--color-accent)] px-3 py-1 bg-[var(--color-accent-soft)] rounded-full border border-[rgba(0,229,255,0.15)]">
+      {w.category}
+    </span>
+    <span class="text-[0.82rem] text-[var(--color-text-muted)] font-[var(--font-mono)]">
+      {formatDate(w.date)}
+    </span>
+  </div>
+
+  <!-- Content -->
+  <h3 class="text-lg font-bold text-[var(--color-text-primary)] mb-3 leading-tight">{w.title}</h3>
+  <p class="text-[0.92rem] text-[var(--color-text-secondary)] leading-relaxed flex-grow">{w.description}</p>
+
+  <!-- Read more -->
+  <span class="inline-flex items-center gap-1.5 mt-5 text-sm font-semibold text-[var(--color-accent)]">
+    Read more <span class="transition-transform duration-300 group-hover:translate-x-1">→</span>
+  </span>
+</a>

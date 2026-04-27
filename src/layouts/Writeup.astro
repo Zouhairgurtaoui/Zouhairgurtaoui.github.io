@@ -1,0 +1,556 @@
+---
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import BackToTop from '../components/BackToTop.astro';
+import { writeups } from '../data/writeups';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  date?: string;
+  tags?: string[];
+  slug?: string;
+}
+
+const {
+  title,
+  description = "",
+  date,
+  tags = [],
+  slug = "",
+} = Astro.props;
+
+// Related writeups (exclude current)
+const related = writeups.filter(w => w.link !== `/writeups/${slug}`).slice(0, 3);
+
+function formatDate(d: string) {
+  return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+---
+
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <meta name="author" content="Zouhair Guertaoui" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:type" content="article" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔓</text></svg>" />
+  <script is:inline>
+    const t = localStorage.getItem('theme');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+  </script>
+</head>
+<body class="leading-relaxed text-base">
+  <Nav isWriteup={true} />
+
+  <div class="writeup-container">
+    <!-- Main article -->
+    <article class="writeup-main">
+      <header class="writeup-header">
+        <a href="/" class="back-link group">
+          <span class="transition-transform duration-300 group-hover:-translate-x-1">←</span> Back to Portfolio
+        </a>
+
+        {tags.length > 0 && (
+          <div class="tag-row">
+            {tags.map((tag) => (
+              <span class="tag">{tag}</span>
+            ))}
+          </div>
+        )}
+
+        <h1 class="writeup-title"><slot name="title" /></h1>
+
+        {date && (
+          <div class="writeup-meta">
+            <span>{formatDate(date)}</span>
+            <span>·</span>
+            <span>Zouhair Guertaoui</span>
+          </div>
+        )}
+
+        {description && (
+          <p class="writeup-desc">{description}</p>
+        )}
+      </header>
+
+      <div class="writeup-body" id="writeup-body">
+        <slot />
+      </div>
+    </article>
+
+    <!-- Sidebar -->
+    <aside class="writeup-sidebar" id="sidebar">
+      <!-- Table of Contents -->
+      <div class="sidebar-block">
+        <h4 class="sidebar-title">Contents</h4>
+        <nav class="toc" id="toc">
+          <!-- Populated by JS -->
+        </nav>
+      </div>
+
+      <!-- Related Writeups -->
+      {related.length > 0 && (
+        <div class="sidebar-block">
+          <h4 class="sidebar-title">Related Writeups</h4>
+          <ul class="related-list">
+            {related.map((w) => (
+              <li>
+                <a href={w.link} class="related-link">
+                  <span class="related-cat">{w.category}</span>
+                  <span class="related-title">{w.title}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </aside>
+  </div>
+
+  <Footer />
+  <BackToTop />
+
+  <!-- TOC generator + scroll spy + reveal -->
+  <script>
+    function initWriteup() {
+      // Generate TOC from h2/h3 headings
+      const body = document.getElementById('writeup-body');
+      const toc = document.getElementById('toc');
+      if (!body || !toc) return;
+
+      const headings = body.querySelectorAll('h2, h3');
+      if (!headings.length) return;
+
+      let html = '';
+      headings.forEach((h, i) => {
+        const id = h.id || `section-${i}`;
+        h.id = id;
+        const isH3 = h.tagName === 'H3';
+        html += `<a href="#${id}" class="toc-link${isH3 ? ' toc-sub' : ''}" data-target="${id}">${h.textContent}</a>`;
+      });
+      toc.innerHTML = html;
+
+      // Scroll spy
+      const links = toc.querySelectorAll('.toc-link');
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              links.forEach((l) => l.classList.remove('active'));
+              const active = toc.querySelector(`[data-target="${entry.target.id}"]`);
+              if (active) active.classList.add('active');
+            }
+          });
+        },
+        { rootMargin: '-80px 0px -70% 0px' }
+      );
+      headings.forEach((h) => observer.observe(h));
+
+      // Scroll reveal
+      const reveals = document.querySelectorAll('.reveal');
+      if (reveals.length) {
+        const revealObserver = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                revealObserver.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+        );
+        reveals.forEach((el) => revealObserver.observe(el));
+      }
+    }
+
+    initWriteup();
+    document.addEventListener('astro:after-swap', initWriteup);
+  </script>
+</body>
+</html>
+
+<style>
+  /* ─── Container: article + sidebar ─── */
+  .writeup-container {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 48px;
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 0 32px;
+    align-items: start;
+  }
+
+  /* ─── Main Article ─── */
+  .writeup-main {
+    min-width: 0;
+    padding-bottom: 80px;
+  }
+
+  .writeup-header {
+    padding-top: calc(var(--spacing-nav) + 48px);
+    margin-bottom: 48px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    margin-bottom: 32px;
+    transition: color 0.3s;
+  }
+  .back-link:hover { color: var(--color-accent); }
+
+  .tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 4px 14px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+    border: 1px solid var(--color-border-hover);
+  }
+
+  .writeup-title {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--color-text-primary);
+    margin-bottom: 16px;
+  }
+
+  .writeup-meta {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .writeup-desc {
+    color: var(--color-text-secondary);
+    font-size: 1.05rem;
+    line-height: 1.8;
+  }
+
+  /* ─── Sidebar ─── */
+  .writeup-sidebar {
+    position: sticky;
+    top: calc(var(--spacing-nav) + 32px);
+    padding-top: calc(var(--spacing-nav) + 48px);
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    max-height: calc(100vh - var(--spacing-nav) - 48px);
+    overflow-y: auto;
+  }
+
+  .sidebar-block {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 20px;
+  }
+
+  .sidebar-title {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* TOC */
+  .toc { display: flex; flex-direction: column; gap: 2px; }
+
+  :global(.toc-link) {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    padding: 5px 10px;
+    border-left: 2px solid transparent;
+    border-radius: 0 4px 4px 0;
+    transition: all 0.2s ease;
+    line-height: 1.4;
+  }
+  :global(.toc-link:hover) {
+    color: var(--color-text-primary);
+    background: var(--color-accent-soft);
+  }
+  :global(.toc-link.active) {
+    color: var(--color-accent);
+    border-left-color: var(--color-accent);
+    background: var(--color-accent-soft);
+  }
+  :global(.toc-link.toc-sub) {
+    padding-left: 22px;
+    font-size: 0.78rem;
+  }
+
+  /* Related writeups */
+  .related-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+  .related-link {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-decoration: none;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+  }
+  .related-link:hover {
+    background: var(--color-accent-soft);
+    border-color: var(--color-border-hover);
+  }
+
+  .related-cat {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-accent);
+  }
+  .related-title {
+    font-size: 0.82rem;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+  }
+  .related-link:hover .related-title { color: var(--color-text-primary); }
+
+  /* ─── Writeup Body — Prose ─── */
+  .writeup-body {
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    line-height: 1.85;
+  }
+
+  .writeup-body :global(h2) {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-top: 56px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .writeup-body :global(h3) {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-top: 36px;
+    margin-bottom: 12px;
+  }
+
+  .writeup-body :global(p) {
+    margin-bottom: 18px;
+    color: var(--color-text-secondary);
+  }
+  .writeup-body :global(p strong) { color: var(--color-text-primary); }
+
+  .writeup-body :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  /* Images with captions via figure/figcaption */
+  .writeup-body :global(figure) {
+    margin: 24px 0;
+  }
+
+  .writeup-body :global(figure img) {
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    display: block;
+  }
+
+  .writeup-body :global(figcaption) {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  /* Plain images (no figure wrapper) */
+  .writeup-body :global(img:not(figure img)) {
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    margin: 24px 0;
+    display: block;
+  }
+
+  /* Code blocks */
+  .writeup-body :global(.code-block) {
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin: 20px 0;
+    overflow: hidden;
+  }
+
+  .writeup-body :global(.code-bar) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .writeup-body :global(.code-dots) { display: flex; gap: 6px; }
+  .writeup-body :global(.code-dots span) { width: 12px; height: 12px; border-radius: 50%; }
+  .writeup-body :global(.code-dots span:nth-child(1)) { background: #ff5f57; }
+  .writeup-body :global(.code-dots span:nth-child(2)) { background: #febc2e; }
+  .writeup-body :global(.code-dots span:nth-child(3)) { background: #28c840; }
+
+  .writeup-body :global(.code-label) {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .writeup-body :global(pre) {
+    padding: 20px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  /* ─── Callout boxes — READABLE text ─── */
+  .writeup-body :global(.callout) {
+    padding: 18px 22px;
+    border-radius: var(--radius-sm);
+    margin: 24px 0;
+    font-size: 0.92rem;
+    line-height: 1.75;
+    border-width: 1px;
+    border-left-width: 3px;
+    border-style: solid;
+    color: var(--color-text-primary);
+  }
+
+  .writeup-body :global(.callout strong) {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .writeup-body :global(.callout code) {
+    font-size: 0.85em;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .writeup-body :global(.callout-info) {
+    background: rgba(0,191,255,0.06);
+    border-color: rgba(0,191,255,0.2);
+    border-left-color: var(--color-blue);
+  }
+  .writeup-body :global(.callout-info strong) { color: var(--color-blue); }
+  .writeup-body :global(.callout-info code) { color: var(--color-blue); background: rgba(0,191,255,0.1); }
+
+  .writeup-body :global(.callout-warn) {
+    background: rgba(255,209,102,0.06);
+    border-color: rgba(255,209,102,0.2);
+    border-left-color: var(--color-yellow);
+  }
+  .writeup-body :global(.callout-warn strong) { color: var(--color-yellow); }
+  .writeup-body :global(.callout-warn code) { color: var(--color-yellow); background: rgba(255,209,102,0.1); }
+
+  .writeup-body :global(.callout-success) {
+    background: rgba(0,255,136,0.05);
+    border-color: rgba(0,255,136,0.2);
+    border-left-color: var(--color-green);
+  }
+  .writeup-body :global(.callout-success strong) { color: var(--color-green); }
+  .writeup-body :global(.callout-success code) { color: var(--color-green); background: rgba(0,255,136,0.1); }
+
+  .writeup-body :global(.callout-danger) {
+    background: rgba(255,69,96,0.05);
+    border-color: rgba(255,69,96,0.2);
+    border-left-color: var(--color-red);
+  }
+  .writeup-body :global(.callout-danger strong) { color: var(--color-red); }
+  .writeup-body :global(.callout-danger code) { color: var(--color-red); background: rgba(255,69,96,0.1); }
+
+  /* Tables */
+  .writeup-body :global(table) { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 20px 0; }
+  .writeup-body :global(th) {
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-hover);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .writeup-body :global(td) { padding: 12px 16px; border-bottom: 1px solid var(--color-border); color: var(--color-text-secondary); vertical-align: top; }
+  .writeup-body :global(tr:last-child td) { border-bottom: none; }
+  .writeup-body :global(tr:hover td) { background: rgba(0,229,255,0.02); }
+
+  .writeup-body :global(hr) { border: none; border-top: 1px solid var(--color-border); margin: 48px 0; }
+
+  /* ─── Responsive ─── */
+  @media (max-width: 1024px) {
+    .writeup-container {
+      grid-template-columns: 1fr;
+      padding: 0 24px;
+    }
+    .writeup-sidebar {
+      display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .writeup-container { padding: 0 16px; }
+    .writeup-header { padding-top: calc(var(--spacing-nav) + 32px); }
+    .writeup-body :global(pre) { font-size: 0.75rem; padding: 14px; }
+    .writeup-meta { flex-direction: column; gap: 6px; }
+  }
+</style>

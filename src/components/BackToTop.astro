@@ -1,0 +1,34 @@
+---
+---
+
+<button
+  class="fixed bottom-8 right-8 w-[46px] h-[46px] rounded-full bg-[var(--color-accent)] text-[var(--color-bg-primary)] border-none cursor-pointer flex items-center justify-center text-xl shadow-[0_4px_15px_rgba(0,229,255,0.3)] opacity-0 invisible translate-y-2.5 transition-all duration-300 z-[999] hover:-translate-y-1 hover:shadow-[0_6px_25px_rgba(0,229,255,0.4)] max-sm:bottom-5 max-sm:right-5 max-sm:w-[42px] max-sm:h-[42px]"
+  id="back-to-top"
+  aria-label="Back to top"
+>↑</button>
+
+<script>
+  function initBackToTop() {
+    const btn = document.getElementById('back-to-top');
+    if (!btn) return;
+
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 500) {
+        btn.style.opacity = '1';
+        btn.style.visibility = 'visible';
+        btn.style.transform = 'translateY(0)';
+      } else {
+        btn.style.opacity = '0';
+        btn.style.visibility = 'hidden';
+        btn.style.transform = 'translateY(10px)';
+      }
+    });
+
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  initBackToTop();
+  document.addEventListener('astro:after-swap', initBackToTop);
+</script>

