@@ -22,8 +22,8 @@ const projects = [
   {
     title: "Secure DMVPN Architecture",
     description:
-      "Designed and deployed a VPN-IPSec DMVPN architecture interconnecting 6 geographically distributed sites for Groupe OCP, with GRE tunnels secured by AES-256 encryption.",
-    tech: ["VPN-IPSec", "DMVPN", "FortiGate", "EIGRP", "OSPF", "GNS3"],
+      "Designed and deployed a VPN-IPSec DMVPN architecture interconnecting 6 geographically distributed sites for Groupe OCP, with GRE tunnels secured by AES-256 encryption.Implemented granular firewall policies across LAN, DMZ, and WAN segments with 6 security tiers on FortiGate, validated via Wireshark traffic analysis.",
+    tech: ["VPN-IPSec", "DMVPN", "FortiGate", "EIGRP", "OSPF", "GNS3", "Wireshark", "Network Security"],
     github: "",
     demo: "",
     featured: true,
@@ -33,7 +33,7 @@ const projects = [
     description:
       "Intelligent web-based evaluation platform that adapts difficulty level based on student performance, with secure user data management and result analytics.",
     tech: ["Python", "Django", "HTML5/CSS3", "Bootstrap", "SQL Server"],
-    github: "https://github.com/zouhair-guertaoui",
+    github: "https://github.com/Zouhairgurtaoui/ajyal",
     demo: "",
     featured: true,
   },
@@ -46,15 +46,15 @@ const projects = [
     demo: "",
     featured: false,
   },
-  {
-    title: "FortiGate Firewall Segmentation Lab",
-    description:
-      "Implemented granular firewall policies across LAN, DMZ, and WAN segments with 6 security tiers on FortiGate, validated via Wireshark traffic analysis.",
-    tech: ["FortiGate", "Wireshark", "IPSec", "Network Security"],
-    github: "",
-    demo: "",
-    featured: false,
-  },
+ // {
+   // title: "",
+   // description:
+    //  "",
+    //tech: ["FortiGate", ],
+   // github: "https://github.com/Zouhairgurtaoui/Meezane",
+   // demo: "",
+    //featured: false,
+  //},
   // ──────────────────────────────────────────────
   // PLACEHOLDER — Copy this block to add more projects
   // ──────────────────────────────────────────────
