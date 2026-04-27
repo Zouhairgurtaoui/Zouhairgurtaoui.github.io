@@ -202,14 +202,15 @@ hashcat -m 2100 -a 0 admin_hash /usr/share/seclists/Passwords/corporate_password
 
 ## Phase 7 — Domain Controller Compromise
 
-Using the recovered Administrator credentials, we directly authenticate to the Domain Controller via `evil-winrm`. At this point, we have full administrative access over the domain. From there, we perform a DCSync attack to dump all domain hashes, including the `krbtgt` account. This effectively means the domain is fully compromised, and we can forge Golden Tickets for persistent and unrestricted access.
-
+Using the recovered Administrator credentials, we directly authenticate to the Domain Controller via `evil-winrm`. 
 ```bash
 evil-winrm -i 192.168.1.10 -u Administrator -p 'P@ssw0rd123!'
 ```
+At this point, we have full administrative access over the domain. 
 
 ![Proof of Domain Controller compromise](/writeups/rbcd/ad-proof-dc.png)
 
+From there, we perform a DCSync attack to dump all domain hashes, including the `krbtgt` account. This effectively means the domain is fully compromised, and we can forge Golden Tickets for persistent and unrestricted access.
 ![Domain fully compromised — all hashes obtained](/writeups/rbcd/ad-pwnd.png)
 
 ---
