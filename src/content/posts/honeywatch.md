@@ -47,7 +47,7 @@ In this project, FortiGate sits at the intersection of all three network zones, 
 
 ### 4. Log Analysis (Loki/Grafana)
 
-ollecting logs is only useful if you can make sense of them quickly. In a real SOC environment, analysts deal with thousands of log entries per hour across multiple sources, making a centralized log management system essential.
+Collecting logs is only useful if you can make sense of them quickly. In a real SOC environment, analysts deal with thousands of log entries per hour across multiple sources, making a centralized log management system essential.
 
 In this project, two log sources feed into the monitoring stack. FortiGate generates forward traffic logs for every connection passing through the firewall, while OpenCanary produces structured JSON logs capturing every interaction with the honeypot services. Both are collected by Promtail, shipped to Loki for storage and indexing, and visualized through Grafana dashboards.
 
@@ -204,6 +204,10 @@ The IP configuration is made persistent through GNS3's built-in network configur
 
 The OpenCanary configuration file is prepared on the host and then copied directly into the running container using:
 
+```bash
+sudo docker cp ./opencanary-temp.conf image_name:/etc/opencanaryd/opencanary.conf
+```
+
 ```YAML
 {
     "device.node_id": "honeypot-01",
@@ -241,9 +245,7 @@ The OpenCanary configuration file is prepared on the host and then copied direct
 This defines which services the honeypot will emulate, including FTP on port 21, SSH on port 22, HTTP on port 80, and Telnet on port 23, along with the log file path where all interactions will be recorded.
 Copy it to the container :
 
-```bash
-sudo docker cp ./opencanary-temp.conf image_name:/etc/opencanaryd/opencanary.conf
-```
+
 
 ![OpenCanary Config](/writeups/honypot/honeypot-opencanary-conf.png)
 
@@ -283,6 +285,7 @@ The stack consists of three components:
 - Loki for log storage
 - Promtail for log collection and shipping
 - Grafana for visualization
+
 All three run as Docker containers managed through a single Compose file.
 
 The Compose file defines all three services. Loki listens on port 3100, Promtail mounts the host log directory and the Docker socket to access both system logs and container stdout, and Grafana exposes the dashboard on port 3000 with persistent volume storage.
